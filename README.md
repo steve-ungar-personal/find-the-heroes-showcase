@@ -4,7 +4,7 @@
 
 A community census of Upper Deck Heroes autograph cards (1990–1992). Upper Deck randomly inserted hand-signed, hand-numbered cards of 18 legends — Reggie Jackson, Nolan Ryan, Hank Aaron, Ted Williams, Wayne Gretzky, Joe Montana and others — into packs and dealer boxes. Each set is numbered to 2,500, 2,800 or 3,000, so **48,900 cards** exist in total. Nobody knows where most of them are.
 
-Find the Heroes tracks every copy that has surfaced: which serial numbers have been seen, a photo of each one, who holds it (if they choose to say), and what it has sold for. About **2,500 cards** are documented so far, plus **2,300+ recorded sales**.
+Find the Heroes tracks every copy that has surfaced: which serial numbers have been seen, a photo of each one, who holds it (if they choose to say), and what it has sold for. Thousands are documented so far.
 
 > This repo is a showcase. The application code lives in a private repository; this README describes what it does and how it's built.
 
@@ -80,33 +80,15 @@ flowchart LR
 | Email | Nodemailer digest + IMAP inbox parsing for emailed submissions |
 | AI in the app | Claude Haiku vision reads cert numbers off graded-card slab photos |
 
-**Some details that turned out to matter:**
-
-- **One classifier, one chokepoint.** Card titles across a dozen sources are messy: "Heroes" also names unrelated products, reprints share player names, and some titles look right but describe a different card. A single classifier module decides whether a title is a census card, and every ingest path calls it, so a new exclusion rule lands everywhere at once.
-- **Serial-number trust.** A number in a listing title isn't proof. Sales are only attached to a specific serial when the serial comes from a verified source (the census record or a reviewed submission). Everything else is recorded as an unverified sale for that set.
-- **Strict image rules.** Every census photo must be of *that exact card*: no stock images, no comps, no photo of the same card with a different serial. Imports that can't produce an exact image are held for manual review.
-- **Explicit cache invalidation.** Public pages are cached until a tag is invalidated, which keeps them fast and cheap. Every writer, including sales imports, busts the per-card tag it touched, and a daily sweep catches anything changed outside the app.
-- **Running locally where datacenters get blocked.** Some sources block cloud IP ranges, so those syncs run as scheduled jobs on a home machine and post results to the site.
-
 ---
 
 ## The AI workflow
 
 The site was built, and is largely operated, by one person working with **[Claude Code](https://claude.com/claude-code)**.
 
-**Building it.** Over 400 commits since May 2026, most written in conversation with Claude Code: features, data migrations, scraper adapters for each new source, and the debugging that comes with them. A project instructions file (`CLAUDE.md`) plus topic notes hold the hard-won rules ("a title's /2500 doesn't prove the print run", "verify the deploy the way Vercel builds it"), so every new session starts with what earlier sessions learned.
+**Building it.** Written in conversation with Claude Code: features, data migrations, scraper adapters for each new source, and the debugging that comes with them. A project instructions file (`CLAUDE.md`) plus topic notes hold the hard-won rules ("a title's /2500 doesn't prove the print run", "verify the deploy the way Vercel builds it"), so every new session starts with what earlier sessions learned.
 
 **Finding cards.** The census grows through agentic "source hunts." Reusable **skills** (packaged instructions Claude follows) cover the recurring jobs:
-
-| Skill | What it does |
-|---|---|
-| PSA spec sweep | Lists every PSA-graded Heroes card by spec, checks each cert against the census, and stages new ones |
-| eBay load | Given a listing URL, parses the grade and serial, upgrades the photo to full resolution, and imports it |
-| Facebook / Instagram search | Browses collector groups and hashtags for cards that never hit a marketplace |
-| Close crop | Crops each new card photo down to the signature and handwritten serial for the close-up image |
-| Market digest | Weekly sweep of active and sold listings, emailed as a report |
-
-Hunts have also pulled cards out of archived (Wayback) eBay pages, old auction catalogs, card blogs and Common Crawl.
 
 **Human in the loop.** AI finds and stages; a person approves. Every new card lands as *pending* and needs a human sign-off before it appears as reported, and judgment calls such as possible fakes, conflicting serials or ambiguous photos are flagged for review instead of decided automatically.
 
